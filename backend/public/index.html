@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SOBP Validation Dashboard</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #0f172a;
+        color: #e2e8f0;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          radial-gradient(circle at top left, rgba(59, 130, 246, 0.25), transparent 30rem),
+          radial-gradient(circle at bottom right, rgba(16, 185, 129, 0.18), transparent 28rem),
+          #0f172a;
+      }
+
+      main {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 48px 20px;
+      }
+
+      header {
+        margin-bottom: 32px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: clamp(2rem, 4vw, 3.5rem);
+      }
+
+      p {
+        color: #94a3b8;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+      }
+
+      .card {
+        border: 1px solid rgba(148, 163, 184, 0.24);
+        border-radius: 18px;
+        padding: 22px;
+        background: rgba(15, 23, 42, 0.74);
+        box-shadow: 0 24px 80px rgba(15, 23, 42, 0.45);
+      }
+
+      .metric {
+        margin-top: 12px;
+        font-size: 2.25rem;
+        font-weight: 800;
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(34, 197, 94, 0.16);
+        color: #86efac;
+        font-weight: 700;
+      }
+
+      .status.unhealthy {
+        background: rgba(239, 68, 68, 0.16);
+        color: #fca5a5;
+      }
+
+      button {
+        width: 100%;
+        border: 0;
+        border-radius: 12px;
+        padding: 12px 14px;
+        margin-top: 10px;
+        cursor: pointer;
+        color: #0f172a;
+        background: #38bdf8;
+        font-weight: 800;
+      }
+
+      button.danger {
+        background: #fb7185;
+      }
+
+      button.warning {
+        background: #facc15;
+      }
+
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        color: #cbd5e1;
+      }
+
+      #message {
+        min-height: 24px;
+        margin-top: 20px;
+        color: #bfdbfe;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>SOBP Validation Dashboard</h1>
+        <p>Use this intentionally simple app to validate deployments, health checks, secrets, persistent volumes, logs, restarts, rollbacks, and monitoring.</p>
+      </header>
+
+      <section class="grid">
+        <article class="card">
+          <h2>Health Status</h2>
+          <div id="health" class="status">Loading...</div>
+          <p id="healthTimestamp"></p>
+        </article>
+
+        <article class="card">
+          <h2>Current Counter</h2>
+          <div id="counter" class="metric">—</div>
+          <p>Backed by SQLite in the persistent data directory.</p>
+        </article>
+
+        <article class="card">
+          <h2>Environment Variables</h2>
+          <pre id="env">Loading...</pre>
+        </article>
+      </section>
+
+      <section class="card" style="margin-top: 16px;">
+        <h2>Manual Validation Actions</h2>
+        <div class="grid">
+          <button id="increment">Increment Counter</button>
+          <button id="cpu" class="warning">Generate CPU Load</button>
+          <button id="memory" class="warning">Generate Memory Load</button>
+          <button id="unhealthy" class="danger">Make Unhealthy</button>
+          <button id="crash" class="danger">Crash Application</button>
+        </div>
+        <div id="message"></div>
+      </section>
+    </main>
+
+    <script>
+      const message = document.querySelector('#message');
+
+      async function requestJson(path, options) {
+        const response = await fetch(path, options);
+        const data = await response.json();
+        if (!response.ok && response.status !== 500) {
+          throw new Error(data.error || response.statusText);
+        }
+        return { data, response };
+      }
+
+      async function refresh() {
+        const [{ data: counter }, { data: env }, healthResult] = await Promise.all([
+          requestJson('/counter'),
+          requestJson('/env'),
+          requestJson('/health').catch((error) => ({ error }))
+        ]);
+
+        document.querySelector('#counter').textContent = counter.value;
+        document.querySelector('#env').textContent = JSON.stringify(env, null, 2);
+
+        const health = document.querySelector('#health');
+        if (healthResult.error) {
+          health.textContent = 'unhealthy';
+          health.classList.add('unhealthy');
+          document.querySelector('#healthTimestamp').textContent = healthResult.error.message;
+        } else {
+          health.textContent = healthResult.data.status;
+          health.classList.toggle('unhealthy', healthResult.response.status >= 500);
+          document.querySelector('#healthTimestamp').textContent = healthResult.data.timestamp;
+        }
+      }
+
+      async function post(path, label) {
+        const { data } = await requestJson(path, { method: 'POST' });
+        message.textContent = `${label}: ${JSON.stringify(data)}`;
+        await refresh();
+      }
+
+      document.querySelector('#increment').addEventListener('click', () => post('/counter/increment', 'Counter incremented'));
+      document.querySelector('#cpu').addEventListener('click', () => post('/simulate/cpu', 'CPU simulation started'));
+      document.querySelector('#memory').addEventListener('click', () => post('/simulate/memory', 'Memory simulation started'));
+      document.querySelector('#unhealthy').addEventListener('click', () => post('/simulate/unhealthy', 'Unhealthy period started'));
+      document.querySelector('#crash').addEventListener('click', () => post('/simulate/crash', 'Crash scheduled'));
+
+      refresh();
+      setInterval(refresh, 5000);
+    </script>
+  </body>
+</html>
