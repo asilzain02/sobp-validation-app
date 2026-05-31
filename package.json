@@ -1,0 +1,34 @@
+{
+  "name": "sobp-validation-app",
+  "version": "1.0.0",
+  "description": "Infrastructure validation application for SOBP deployments.",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx watch backend/src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  },
+  "keywords": [
+    "sobp",
+    "validation",
+    "express",
+    "typescript",
+    "sqlite",
+    "docker"
+  ],
+  "author": "SOBP Validation",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.18.3",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.1",
+    "typescript": "^5.4.5"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
