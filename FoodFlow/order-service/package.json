@@ -1,0 +1,17 @@
+{
+  "name": "order-service",
+  "version": "0.1.0",
+  "description": "FoodFlow order service for SOBP V0.4 discovery validation.",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "keywords": ["foodflow", "order", "sobp", "validation"],
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

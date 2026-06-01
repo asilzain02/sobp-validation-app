@@ -1,0 +1,83 @@
+services:
+  gateway-service:
+    build: ./gateway-service
+    container_name: foodflow-gateway-service
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+      FOOD_SERVICE_URL: http://food-service:3001
+      ORDER_SERVICE_URL: http://order-service:3002
+      PAYMENT_SERVICE_URL: http://payment-service:3003
+      TRACKING_SERVICE_URL: http://tracking-service:3004
+    depends_on:
+      - food-service
+      - order-service
+      - payment-service
+      - tracking-service
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  food-service:
+    build: ./food-service
+    container_name: foodflow-food-service
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: "3001"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  order-service:
+    build: ./order-service
+    container_name: foodflow-order-service
+    ports:
+      - "3002:3002"
+    environment:
+      PORT: "3002"
+      FOOD_SERVICE_URL: http://food-service:3001
+    depends_on:
+      - food-service
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3002/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  payment-service:
+    build: ./payment-service
+    container_name: foodflow-payment-service
+    ports:
+      - "3003:3003"
+    environment:
+      PORT: "3003"
+      ORDER_SERVICE_URL: http://order-service:3002
+    depends_on:
+      - order-service
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3003/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  tracking-service:
+    build: ./tracking-service
+    container_name: foodflow-tracking-service
+    ports:
+      - "3004:3004"
+    environment:
+      PORT: "3004"
+      PAYMENT_SERVICE_URL: http://payment-service:3003
+    depends_on:
+      - payment-service
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3004/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
