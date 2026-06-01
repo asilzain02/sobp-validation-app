@@ -1,0 +1,6 @@
+[
+  { "id": "1", "name": "Margherita Pizza", "price": 12.99, "category": "pizza" },
+  { "id": "2", "name": "Veggie Burger", "price": 9.49, "category": "burger" },
+  { "id": "3", "name": "Chicken Tacos", "price": 10.25, "category": "tacos" },
+  { "id": "4", "name": "Sushi Bento", "price": 15.75, "category": "sushi" }
+]
